@@ -1,0 +1,321 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Calendar, MapPin, Utensils, BookOpen, FileText, Clock, Users } from 'lucide-react';
+
+const CampusChatbot = () => {
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      text: "Hi! I'm your campus assistant. I can help you with schedules, facilities, dining, library services, and administrative procedures. What would you like to know?",
+      sender: 'bot',
+      timestamp: new Date()
+    }
+  ]);
+  const [inputValue, setInputValue] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  // Simulated campus database
+  const campusDatabase = {
+    schedules: {
+      courses: [
+        { code: 'CS101', name: 'Introduction to Computer Science', time: 'MWF 9:00-10:00 AM', room: 'Tech Building 201', instructor: 'Dr. Smith' },
+        { code: 'MATH201', name: 'Calculus II', time: 'TTh 2:00-3:30 PM', room: 'Science Hall 105', instructor: 'Prof. Johnson' },
+        { code: 'ENG102', name: 'English Composition', time: 'MWF 11:00 AM-12:00 PM', room: 'Liberal Arts 301', instructor: 'Dr. Williams' }
+      ],
+      calendar: {
+        'spring break': 'March 11-15, 2024',
+        'finals week': 'May 6-10, 2024',
+        'graduation': 'May 18, 2024',
+        'fall registration': 'April 15-30, 2024'
+      }
+    },
+    facilities: {
+      buildings: [
+        { name: 'Library', hours: '7:00 AM - 11:00 PM', location: 'Central Campus', services: 'Study rooms, computers, printing' },
+        { name: 'Student Union', hours: '6:00 AM - 12:00 AM', location: 'Main Campus', services: 'Food court, bookstore, meeting rooms' },
+        { name: 'Recreation Center', hours: '5:00 AM - 11:00 PM', location: 'South Campus', services: 'Gym, pool, fitness classes' },
+        { name: 'Tech Building', hours: '7:00 AM - 10:00 PM', location: 'North Campus', services: 'Computer labs, lecture halls' }
+      ],
+      parking: 'Student parking available in lots A, B, and C. Daily rate: $5, Semester pass: $150'
+    },
+    dining: {
+      locations: [
+        { name: 'Main Dining Hall', hours: '7:00 AM - 9:00 PM', menu: 'Pizza, salads, sandwiches, daily specials', location: 'Student Union' },
+        { name: 'Coffee Corner', hours: '6:30 AM - 8:00 PM', menu: 'Coffee, pastries, light snacks', location: 'Library' },
+        { name: 'Food Trucks', hours: '11:00 AM - 3:00 PM', menu: 'Tacos, burgers, asian cuisine', location: 'Main Quad' }
+      ],
+      mealPlans: 'Unlimited ($2,800/semester), 14 meals/week ($2,200/semester), 10 meals/week ($1,800/semester)'
+    },
+    library: {
+      services: [
+        'Book checkout and renewals',
+        'Research assistance',
+        'Interlibrary loan',
+        'Study room reservations',
+        'Computer and printer access',
+        'Online database access'
+      ],
+      hours: {
+        'monday-thursday': '7:00 AM - 11:00 PM',
+        'friday': '7:00 AM - 8:00 PM',
+        'saturday': '9:00 AM - 6:00 PM',
+        'sunday': '12:00 PM - 11:00 PM'
+      }
+    },
+    administrative: {
+      procedures: [
+        { name: 'Registration', description: 'Online registration opens based on credit hours. Check student portal for your registration date.' },
+        { name: 'Financial Aid', description: 'Complete FAFSA by March 1. Visit Financial Aid office in Admin Building, room 150.' },
+        { name: 'Transcript Request', description: 'Request official transcripts through the Registrar\'s office or online student portal.' },
+        { name: 'Parking Permits', description: 'Purchase parking permits online or at Campus Safety office. Required for all vehicles.' }
+      ],
+      contacts: {
+        'registrar': 'registrar@university.edu, (555) 123-4567',
+        'financial aid': 'finaid@university.edu, (555) 123-4568',
+        'student services': 'studentservices@university.edu, (555) 123-4569',
+        'it help desk': 'ithelp@university.edu, (555) 123-4570'
+      }
+    }
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Simple AI response logic
+  const generateResponse = (query) => {
+    const lowerQuery = query.toLowerCase();
+    
+    // Schedule queries
+    if (lowerQuery.includes('schedule') || lowerQuery.includes('class') || lowerQuery.includes('course')) {
+      if (lowerQuery.includes('cs101') || lowerQuery.includes('computer science')) {
+        return `CS101 - Introduction to Computer Science meets MWF 9:00-10:00 AM in Tech Building 201 with Dr. Smith.`;
+      }
+      return `Here are some current courses:\n\n${campusDatabase.schedules.courses.map(course => 
+        `• ${course.code} - ${course.name}\n  ${course.time}, ${course.room}`
+      ).join('\n\n')}`;
+    }
+
+    // Calendar queries
+    if (lowerQuery.includes('calendar') || lowerQuery.includes('break') || lowerQuery.includes('finals') || lowerQuery.includes('graduation')) {
+      return `Upcoming important dates:\n\n${Object.entries(campusDatabase.schedules.calendar).map(([event, date]) => 
+        `• ${event.charAt(0).toUpperCase() + event.slice(1)}: ${date}`
+      ).join('\n')}`;
+    }
+
+    // Facility queries
+    if (lowerQuery.includes('facility') || lowerQuery.includes('building') || lowerQuery.includes('location') || lowerQuery.includes('hours')) {
+      if (lowerQuery.includes('library')) {
+        const lib = campusDatabase.facilities.buildings.find(b => b.name === 'Library');
+        return `Library Information:\n• Hours: ${lib.hours}\n• Location: ${lib.location}\n• Services: ${lib.services}`;
+      }
+      return `Campus Facilities:\n\n${campusDatabase.facilities.buildings.map(building => 
+        `• ${building.name}\n  Hours: ${building.hours}\n  Location: ${building.location}`
+      ).join('\n\n')}`;
+    }
+
+    // Parking queries
+    if (lowerQuery.includes('parking')) {
+      return campusDatabase.facilities.parking;
+    }
+
+    // Dining queries
+    if (lowerQuery.includes('dining') || lowerQuery.includes('food') || lowerQuery.includes('eat') || lowerQuery.includes('restaurant')) {
+      if (lowerQuery.includes('meal plan')) {
+        return `Meal Plan Options:\n${campusDatabase.dining.mealPlans}`;
+      }
+      return `Dining Options:\n\n${campusDatabase.dining.locations.map(location => 
+        `• ${location.name}\n  Hours: ${location.hours}\n  Menu: ${location.menu}\n  Location: ${location.location}`
+      ).join('\n\n')}`;
+    }
+
+    // Library queries
+    if (lowerQuery.includes('library') && !lowerQuery.includes('building')) {
+      return `Library Services:\n\n${campusDatabase.library.services.map(service => `• ${service}`).join('\n')}\n\nHours:\n${Object.entries(campusDatabase.library.hours).map(([day, hours]) => 
+        `• ${day.charAt(0).toUpperCase() + day.slice(1)}: ${hours}`
+      ).join('\n')}`;
+    }
+
+    // Administrative queries
+    if (lowerQuery.includes('registration') || lowerQuery.includes('admin') || lowerQuery.includes('procedure') || lowerQuery.includes('transcript') || lowerQuery.includes('financial aid')) {
+      const procedures = campusDatabase.administrative.procedures;
+      if (lowerQuery.includes('registration')) {
+        return procedures.find(p => p.name === 'Registration').description;
+      }
+      if (lowerQuery.includes('financial aid') || lowerQuery.includes('fafsa')) {
+        return procedures.find(p => p.name === 'Financial Aid').description;
+      }
+      return `Administrative Procedures:\n\n${procedures.map(proc => 
+        `• ${proc.name}: ${proc.description}`
+      ).join('\n\n')}`;
+    }
+
+    // Contact queries
+    if (lowerQuery.includes('contact') || lowerQuery.includes('phone') || lowerQuery.includes('email')) {
+      return `Important Contacts:\n\n${Object.entries(campusDatabase.administrative.contacts).map(([dept, contact]) => 
+        `• ${dept.charAt(0).toUpperCase() + dept.slice(1)}: ${contact}`
+      ).join('\n')}`;
+    }
+
+    // Default response
+    return `I can help you with information about:
+    
+📅 **Schedules** - Class schedules, academic calendar, registration dates
+🏢 **Facilities** - Building hours, locations, services, parking
+🍽️ **Dining** - Restaurant hours, menus, meal plans
+📚 **Library** - Services, hours, study rooms, research help
+📋 **Administrative** - Registration, financial aid, transcripts, contacts
+
+What specific information would you like to know?`;
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim()) return;
+
+    const userMessage = {
+      id: messages.length + 1,
+      text: inputValue,
+      sender: 'user',
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setIsTyping(true);
+
+    // Simulate AI processing time
+    setTimeout(() => {
+      const botResponse = {
+        id: messages.length + 2,
+        text: generateResponse(inputValue),
+        sender: 'bot',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, botResponse]);
+      setIsTyping(false);
+    }, 1000 + Math.random() * 1000);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const quickActions = [
+    { icon: Calendar, text: 'Class Schedules', query: 'Show me class schedules' },
+    { icon: MapPin, text: 'Campus Map', query: 'Where are the campus buildings?' },
+    { icon: Utensils, text: 'Dining Options', query: 'What dining options are available?' },
+    { icon: BookOpen, text: 'Library Hours', query: 'What are the library hours?' },
+    { icon: FileText, text: 'Registration', query: 'How do I register for classes?' },
+    { icon: Clock, text: 'Important Dates', query: 'What are the important academic dates?' }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">Campus Assistant</h1>
+              <p className="text-blue-100">Your AI-powered campus information guide</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="p-4 border-b bg-gray-50">
+          <p className="text-sm text-gray-600 mb-3">Quick actions:</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+            {quickActions.map((action, index) => (
+              <button
+                key={index}
+                onClick={() => setInputValue(action.query)}
+                className="flex flex-col items-center p-3 bg-white rounded-lg border hover:border-blue-300 hover:bg-blue-50 transition-colors group"
+              >
+                <action.icon className="w-5 h-5 text-blue-600 mb-1 group-hover:text-blue-700" />
+                <span className="text-xs text-gray-700 text-center">{action.text}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Chat Messages */}
+        <div className="h-96 overflow-y-auto p-6 space-y-4">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div
+                className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
+                  message.sender === 'user'
+                    ? 'bg-blue-600 text-white rounded-br-md'
+                    : 'bg-gray-100 text-gray-800 rounded-bl-md'
+                }`}
+              >
+                <p className="whitespace-pre-line text-sm">{message.text}</p>
+                <p className={`text-xs mt-2 ${
+                  message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
+                }`}>
+                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+            </div>
+          ))}
+          
+          {isTyping && (
+            <div className="flex justify-start">
+              <div className="bg-gray-100 px-4 py-3 rounded-2xl rounded-bl-md">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                </div>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Area */}
+        <div className="p-4 border-t bg-gray-50">
+          <div className="flex space-x-3">
+            <textarea
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask me about schedules, facilities, dining, library, or administrative procedures..."
+              className="flex-1 resize-none border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows="2"
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={!inputValue.trim()}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-3 bg-gray-100 text-center text-xs text-gray-500">
+          AI Campus Assistant • Built for University Information Services
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CampusChatbot;
